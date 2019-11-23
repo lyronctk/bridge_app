@@ -9,7 +9,7 @@
 import UIKit
 
 class ViewController: UIViewController {
-
+    
     @IBOutlet weak var target_status_label: UILabel!
     
     var timer = Timer()
@@ -27,27 +27,28 @@ class ViewController: UIViewController {
     }
     
 
-    func targetEndpointStatusResponse() -> String {
-        let session = URLSession.shared
-        let url = URL(string: "https://demo6542803.mockable.io/bridgeapp")!
-
+    func targetEndpointStatusResponse() -> Int {
+        var res = 1
         let sem = DispatchSemaphore(value: 0)
-        var responseStr = "NONE"
-        let task = session.dataTask(with: url) { data, response, error in
-            guard let data = data else { return }
-            responseStr = String(data: data, encoding: .utf8)!
-            sem.signal()
-        }
-        
-        task.resume()
+        let url = URL(string: "https://demo6542803.mockable.io/bridgeapp")
+        URLSession.shared.dataTask(with:url!, completionHandler: {(data, response, error) in
+            guard let data = data, error == nil else { return }
+            do {
+                let json = try JSONSerialization.jsonObject(with: data, options: .allowFragments) as! [String:Any]
+                res = Int(json["status"] as! String)!
+                sem.signal()
+            } catch let error as NSError {
+                print(error)
+            }
+        }).resume()
         sem.wait()
-        return responseStr
+        
+        return res;
     }
     
     
     @objc func updateOldPersonStatus(){
-//        print("response: " + targetEndpointStatusResponse());
-        if(targetEndpointStatusResponse() == "in_frame") {
+        if(targetEndpointStatusResponse() == 1) {
             target_status_label.text = "PRESENT"
         }
         else {
